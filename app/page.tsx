@@ -120,8 +120,26 @@ export default function ProcessoSeletivo() {
   }
 
   const handleTelefoneChange = (value: string) => {
-    const cleanValue = value.replace(/[^\d\s\-()]/g, "")
-    setFormData((prev) => ({ ...prev, telefone: cleanValue }))
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, "")
+
+    // Limita a 11 dígitos
+    const limitedNumbers = numbers.slice(0, 11)
+
+    // Aplica a formatação brasileira
+    let formatted = limitedNumbers
+
+    if (limitedNumbers.length >= 1) {
+      formatted = `(${limitedNumbers.slice(0, 2)}`
+    }
+    if (limitedNumbers.length >= 3) {
+      formatted = `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 7)}`
+    }
+    if (limitedNumbers.length >= 8) {
+      formatted = `(${limitedNumbers.slice(0, 2)}) ${limitedNumbers.slice(2, 7)}-${limitedNumbers.slice(7, 11)}`
+    }
+
+    setFormData((prev) => ({ ...prev, telefone: formatted }))
   }
 
   const handleRequisitoChange = (field: string, checked: boolean) => {
@@ -397,8 +415,9 @@ export default function ProcessoSeletivo() {
                       onChange={(e) => handleTelefoneChange(e.target.value)}
                       placeholder="(11) 99999-9999"
                       className="border-gray-300 focus:border-[#002c5f] focus:ring-[#002c5f]"
+                      maxLength={15}
                     />
-                    <p className="text-xs text-gray-500">Digite apenas números</p>
+                    <p className="text-xs text-gray-500">Formato: (11) 99999-9999</p>
                   </div>
 
                   <div className="space-y-2">
