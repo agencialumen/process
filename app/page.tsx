@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
-import { saveToCSV } from "./actions"
 import {
   MapPin,
   Clock,
@@ -25,6 +24,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Building2,
+  Star,
+  Calendar,
 } from "lucide-react"
 
 export default function ProcessoSeletivo() {
@@ -66,9 +68,9 @@ export default function ProcessoSeletivo() {
                   `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${position.coords.latitude}&longitude=${position.coords.longitude}&localityLanguage=pt`,
                 )
                 const data = await response.json()
+                // Simplificar para mostrar apenas a cidade principal
                 const cidade = data.city || data.locality || "sua região"
-                const estado = data.principalSubdivision || ""
-                setUserLocation(estado ? `${cidade}/${estado}` : cidade)
+                setUserLocation(cidade)
                 setVagasRestantes(Math.floor(Math.random() * 8) + 3) // 3-10 vagas
               } catch (error) {
                 setUserLocation("sua região")
@@ -93,9 +95,9 @@ export default function ProcessoSeletivo() {
       try {
         const response = await fetch("https://ipapi.co/json/")
         const data = await response.json()
+        // Simplificar para mostrar apenas a cidade principal
         const cidade = data.city || "sua região"
-        const estado = data.region_code || ""
-        setUserLocation(estado ? `${cidade}/${estado}` : cidade)
+        setUserLocation(cidade)
         setVagasRestantes(Math.floor(Math.random() * 8) + 3)
       } catch (error) {
         setUserLocation("sua região")
@@ -123,8 +125,34 @@ export default function ProcessoSeletivo() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const handleTelefoneChange = (value: string) => {
+    // Permitir apenas números, parênteses, espaços e hífens
+    const cleanValue = value.replace(/[^\d\s\-$$$$]/g, "")
+    setFormData((prev) => ({ ...prev, telefone: cleanValue }))
+  }
+
   const handleRequisitoChange = (field: string, checked: boolean) => {
     setRequisitos((prev) => ({ ...prev, [field]: checked }))
+  }
+
+  const saveToLocalStorage = (data: any) => {
+    try {
+      // Obter dados existentes
+      const existingData = localStorage.getItem("candidatos") || "[]"
+      const candidatos = JSON.parse(existingData)
+
+      // Adicionar novo candidato
+      candidatos.push(data)
+
+      // Salvar de volta
+      localStorage.setItem("candidatos", JSON.stringify(candidatos))
+
+      console.log("Dados salvos com sucesso:", data)
+      return { success: true }
+    } catch (error) {
+      console.error("Erro ao salvar dados:", error)
+      return { success: false, error: String(error) }
+    }
   }
 
   const nextStep = async () => {
@@ -136,15 +164,18 @@ export default function ProcessoSeletivo() {
         const now = new Date()
         const dataHora = now.toLocaleString("pt-BR")
 
-        // Salvar dados no CSV
-        await saveToCSV({
+        // Salvar dados no localStorage
+        const dadosParaSalvar = {
+          processId,
           nome: formData.nome,
           email: formData.email,
           telefone: formData.telefone,
           cidade: formData.cidade,
           dataHora,
           userLocation,
-        })
+        }
+
+        saveToLocalStorage(dadosParaSalvar)
       } catch (error) {
         console.error("Erro ao salvar dados:", error)
       } finally {
@@ -185,16 +216,15 @@ export default function ProcessoSeletivo() {
         </div>
       </div>
 
-      {/* Alerta de Vagas por Região - Fixo no topo */}
+      {/* Alerta de Vagas por Região - Fixo no topo - Cor mais suave */}
       {currentStep === 0 && userLocation && (
-        <div className="bg-gradient-to-r from-red-600 to-red-700 text-white py-3 shadow-md">
+        <div className="bg-[#002c5f] bg-opacity-90 text-white py-3 shadow-md">
           <div className="max-w-4xl mx-auto px-4">
             <div className="flex items-center justify-center space-x-2 text-center">
-              <AlertCircle className="w-5 h-5 animate-pulse" />
+              <MapPin className="w-5 h-5" />
               <span className="font-semibold">
-                🔥 Apenas {vagasRestantes} vagas restantes para {userLocation}!
+                {vagasRestantes} vagas disponíveis em {userLocation}
               </span>
-              <span className="hidden md:inline">Garante já a sua!</span>
             </div>
           </div>
         </div>
@@ -237,7 +267,7 @@ export default function ProcessoSeletivo() {
                     remotamente em uma empresa consolidada no mercado brasileiro.
                   </p>
 
-                  {/* Destaque da região */}
+                  {/* Destaque da região - Mais sutil */}
                   {userLocation && (
                     <div className="mt-6 p-4 bg-[#f0f4f8] border border-[#d1dce5] rounded-lg">
                       <div className="flex items-center justify-center space-x-2">
@@ -249,6 +279,58 @@ export default function ProcessoSeletivo() {
                       </p>
                     </div>
                   )}
+                </div>
+
+                {/* Seção Sobre a Empresa */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <Building2 className="w-6 h-6 text-[#002c5f]" />
+                    <h3 className="text-xl font-semibold text-gray-900">Sobre a Conecta Soluções</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-gray-700 mb-4">
+                        A Conecta Soluções é uma empresa líder no setor de atendimento ao cliente, com mais de 15 anos
+                        de experiência no mercado brasileiro. Oferecemos soluções completas em contact center e
+                        atendimento digital.
+                      </p>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Star className="w-4 h-4 text-yellow-500" />
+                          <span className="text-sm text-gray-600">Mais de 2.000 colaboradores</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Calendar className="w-4 h-4 text-[#002c5f]" />
+                          <span className="text-sm text-gray-600">Fundada em 2009</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="w-4 h-4 text-[#002c5f]" />
+                          <span className="text-sm text-gray-600">Presente em todo o Brasil</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">Nossos Diferenciais:</h4>
+                      <ul className="space-y-2 text-sm text-gray-700">
+                        <li className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-[#002c5f]" />
+                          <span>Ambiente de trabalho colaborativo</span>
+                        </li>
+                        <li className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-[#002c5f]" />
+                          <span>Treinamentos constantes</span>
+                        </li>
+                        <li className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-[#002c5f]" />
+                          <span>Plano de carreira estruturado</span>
+                        </li>
+                        <li className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-[#002c5f]" />
+                          <span>Tecnologia de ponta</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -327,22 +409,6 @@ export default function ProcessoSeletivo() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Urgência adicional */}
-                  {userLocation && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <div className="flex items-start space-x-3">
-                        <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-                        <div>
-                          <h4 className="font-medium text-red-800 mb-1">Atenção!</h4>
-                          <p className="text-sm text-red-700">
-                            As vagas para {userLocation} estão se esgotando rapidamente. Apenas {vagasRestantes}{" "}
-                            posições restantes nesta região.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -389,10 +455,11 @@ export default function ProcessoSeletivo() {
                     <Input
                       id="telefone"
                       value={formData.telefone}
-                      onChange={(e) => handleInputChange("telefone", e.target.value)}
+                      onChange={(e) => handleTelefoneChange(e.target.value)}
                       placeholder="(11) 99999-9999"
                       className="border-gray-300 focus:border-[#002c5f] focus:ring-[#002c5f]"
                     />
+                    <p className="text-xs text-gray-500">Digite apenas números</p>
                   </div>
 
                   <div className="space-y-2">
@@ -401,9 +468,9 @@ export default function ProcessoSeletivo() {
                     </Label>
                     <Input
                       id="cidade"
-                      value={formData.cidade || userLocation}
+                      value={formData.cidade}
                       onChange={(e) => handleInputChange("cidade", e.target.value)}
-                      placeholder={userLocation || "São Paulo/SP"}
+                      placeholder="Digite sua cidade e estado"
                       className="border-gray-300 focus:border-[#002c5f] focus:ring-[#002c5f]"
                     />
                   </div>
@@ -525,6 +592,28 @@ export default function ProcessoSeletivo() {
                     </CardContent>
                   </Card>
 
+                  {/* Checkbox de confirmação movido para cá e destacado */}
+                  <Card className="border-[#002c5f] border-2 bg-[#f8fafc]">
+                    <CardContent className="p-6">
+                      <div className="flex items-start space-x-4">
+                        <Checkbox
+                          id="termos"
+                          checked={formData.aceiteTermos}
+                          onCheckedChange={(checked) => handleInputChange("aceiteTermos", checked as boolean)}
+                          className="data-[state=checked]:bg-[#002c5f] data-[state=checked]:border-[#002c5f] mt-1"
+                        />
+                        <div>
+                          <Label htmlFor="termos" className="text-base font-medium text-[#002c5f] cursor-pointer">
+                            Confirmo que atendo a todos os requisitos listados acima *
+                          </Label>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Esta confirmação é obrigatória para prosseguir com o processo seletivo
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <div className="flex items-start space-x-3">
                       <div className="w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -585,31 +674,49 @@ export default function ProcessoSeletivo() {
                       </ul>
                     </div>
 
-                    <div className="bg-[#f0f4f8] border border-[#d1dce5] rounded-lg p-4">
-                      <h4 className="font-medium text-[#002c5f] mb-2">Investimento na Certificação</h4>
-                      <p className="text-[#002c5f] text-sm mb-3">
-                        O valor da certificação é de <strong>R$ 19,90</strong>, que cobre os custos operacionais da
-                        plataforma de ensino e materiais didáticos.
-                      </p>
-
-                      <div className="text-sm text-[#002c5f] space-y-1">
-                        <p>
-                          <strong>Este valor é necessário para:</strong>
+                    {/* Destaque maior para o valor da certificação */}
+                    <div className="bg-[#002c5f] text-white rounded-lg p-6 shadow-md">
+                      <h4 className="font-semibold text-xl mb-3 text-center">Investimento na Certificação</h4>
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="text-3xl font-bold mb-4">R$ 19,90</div>
+                        <p className="text-center mb-4">
+                          Este valor é necessário para iniciar o processo de certificação profissional obrigatória.
                         </p>
-                        <ul className="list-disc list-inside space-y-1 ml-2">
-                          <li>Manutenção da plataforma de treinamento</li>
-                          <li>Acesso aos materiais didáticos atualizados</li>
-                          <li>Suporte técnico durante o curso</li>
-                          <li>Emissão do certificado digital</li>
+                      </div>
+                      <div className="bg-white bg-opacity-10 p-4 rounded-lg">
+                        <p className="font-medium mb-2 text-center">O que está incluído:</p>
+                        <ul className="space-y-2 text-sm">
+                          <li className="flex items-center space-x-2">
+                            <CheckCircle className="w-4 h-4 text-white flex-shrink-0" />
+                            <span>Acesso à plataforma de treinamento</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <CheckCircle className="w-4 h-4 text-white flex-shrink-0" />
+                            <span>Materiais didáticos completos</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <CheckCircle className="w-4 h-4 text-white flex-shrink-0" />
+                            <span>Suporte técnico durante o curso</span>
+                          </li>
+                          <li className="flex items-center space-x-2">
+                            <CheckCircle className="w-4 h-4 text-white flex-shrink-0" />
+                            <span>Emissão do certificado digital</span>
+                          </li>
                         </ul>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      <p className="text-gray-700 text-sm">
-                        <strong>Importante:</strong> A certificação deve ser concluída em até 7 dias após o pagamento.
-                        As vagas são preenchidas conforme a ordem de certificação dos candidatos.
-                      </p>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-amber-800 mb-1">Importante:</h4>
+                          <p className="text-sm text-amber-700">
+                            A certificação deve ser concluída em até 7 dias após o pagamento. As vagas são preenchidas
+                            conforme a ordem de certificação dos candidatos.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -618,7 +725,7 @@ export default function ProcessoSeletivo() {
                   <Button
                     onClick={handlePayment}
                     size="lg"
-                    className="w-full md:w-auto bg-[#002c5f] hover:bg-[#00234c] text-white font-medium py-3 px-8"
+                    className="w-full md:w-auto bg-[#002c5f] hover:bg-[#00234c] text-white font-medium py-4 px-8 text-lg shadow-lg"
                   >
                     Realizar Certificação - R$ 19,90
                   </Button>
@@ -651,7 +758,8 @@ export default function ProcessoSeletivo() {
                       (!requisitos.ensinoMedio ||
                         !requisitos.informaticaBasica ||
                         !requisitos.boaComunicacao ||
-                        !requisitos.disponibilidadeHorario)) ||
+                        !requisitos.disponibilidadeHorario ||
+                        !formData.aceiteTermos)) ||
                     isSaving
                   }
                   className="flex items-center space-x-2 bg-[#002c5f] hover:bg-[#00234c] text-white"
@@ -670,20 +778,6 @@ export default function ProcessoSeletivo() {
                 </Button>
               )}
             </div>
-
-            {currentStep === 2 && (
-              <div className="flex items-center space-x-2 mt-6">
-                <Checkbox
-                  id="termos"
-                  checked={formData.aceiteTermos}
-                  onCheckedChange={(checked) => handleInputChange("aceiteTermos", checked as boolean)}
-                  className="data-[state=checked]:bg-[#002c5f] data-[state=checked]:border-[#002c5f]"
-                />
-                <Label htmlFor="termos" className="text-sm text-gray-600">
-                  Confirmo que atendo a todos os requisitos listados acima
-                </Label>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
