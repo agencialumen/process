@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   MapPin,
   Clock,
@@ -34,11 +35,13 @@ export default function ProcessoSeletivo() {
   const [userLocation, setUserLocation] = useState<string>("")
   const [vagasRestantes, setVagasRestantes] = useState<number>(0)
   const [isSaving, setIsSaving] = useState(false)
+  const [emailValid, setEmailValid] = useState(true)
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
     telefone: "",
     cidade: "",
+    estado: "",
     aceiteTermos: false,
   })
 
@@ -52,6 +55,37 @@ export default function ProcessoSeletivo() {
   const steps = ["Vaga", "Dados", "Requisitos", "Certificação"]
 
   const progress = ((currentStep + 1) / steps.length) * 100
+
+  // Estados brasileiros
+  const estadosBrasileiros = [
+    { value: "AC", label: "Acre" },
+    { value: "AL", label: "Alagoas" },
+    { value: "AP", label: "Amapá" },
+    { value: "AM", label: "Amazonas" },
+    { value: "BA", label: "Bahia" },
+    { value: "CE", label: "Ceará" },
+    { value: "DF", label: "Distrito Federal" },
+    { value: "ES", label: "Espírito Santo" },
+    { value: "GO", label: "Goiás" },
+    { value: "MA", label: "Maranhão" },
+    { value: "MT", label: "Mato Grosso" },
+    { value: "MS", label: "Mato Grosso do Sul" },
+    { value: "MG", label: "Minas Gerais" },
+    { value: "PA", label: "Pará" },
+    { value: "PB", label: "Paraíba" },
+    { value: "PR", label: "Paraná" },
+    { value: "PE", label: "Pernambuco" },
+    { value: "PI", label: "Piauí" },
+    { value: "RJ", label: "Rio de Janeiro" },
+    { value: "RN", label: "Rio Grande do Norte" },
+    { value: "RS", label: "Rio Grande do Sul" },
+    { value: "RO", label: "Rondônia" },
+    { value: "RR", label: "Roraima" },
+    { value: "SC", label: "Santa Catarina" },
+    { value: "SP", label: "São Paulo" },
+    { value: "SE", label: "Sergipe" },
+    { value: "TO", label: "Tocantins" },
+  ]
 
   // Detectar localização do usuário
   useEffect(() => {
@@ -115,6 +149,22 @@ export default function ProcessoSeletivo() {
     }
   }
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  const handleEmailChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, email: value }))
+
+    // Validar apenas se o campo não estiver vazio
+    if (value.length > 0) {
+      setEmailValid(validateEmail(value))
+    } else {
+      setEmailValid(true) // Não mostrar erro se campo estiver vazio
+    }
+  }
+
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
@@ -173,6 +223,7 @@ export default function ProcessoSeletivo() {
           email: formData.email,
           telefone: formData.telefone,
           cidade: formData.cidade,
+          estado: formData.estado,
           dataHora,
           userLocation,
         }
@@ -399,10 +450,15 @@ export default function ProcessoSeletivo() {
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onChange={(e) => handleEmailChange(e.target.value)}
                       placeholder="seu.email@exemplo.com"
-                      className="border-gray-300 focus:border-[#002c5f] focus:ring-[#002c5f]"
+                      className={`border-gray-300 focus:border-[#002c5f] focus:ring-[#002c5f] ${
+                        !emailValid ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""
+                      }`}
                     />
+                    {!emailValid && (
+                      <p className="text-xs text-red-500">Digite um e-mail válido (exemplo@dominio.com)</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -420,17 +476,37 @@ export default function ProcessoSeletivo() {
                     <p className="text-xs text-gray-500">Formato: (11) 99999-9999</p>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="cidade" className="text-sm font-medium text-gray-700">
-                      Cidade/Estado *
-                    </Label>
-                    <Input
-                      id="cidade"
-                      value={formData.cidade}
-                      onChange={(e) => handleInputChange("cidade", e.target.value)}
-                      placeholder="Digite sua cidade e estado"
-                      className="border-gray-300 focus:border-[#002c5f] focus:ring-[#002c5f]"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cidade" className="text-sm font-medium text-gray-700">
+                        Cidade *
+                      </Label>
+                      <Input
+                        id="cidade"
+                        value={formData.cidade}
+                        onChange={(e) => handleInputChange("cidade", e.target.value)}
+                        placeholder="Digite sua cidade"
+                        className="border-gray-300 focus:border-[#002c5f] focus:ring-[#002c5f]"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="estado" className="text-sm font-medium text-gray-700">
+                        Estado *
+                      </Label>
+                      <Select value={formData.estado} onValueChange={(value) => handleInputChange("estado", value)}>
+                        <SelectTrigger className="border-gray-300 focus:border-[#002c5f] focus:ring-[#002c5f]">
+                          <SelectValue placeholder="Selecione o estado" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {estadosBrasileiros.map((estado) => (
+                            <SelectItem key={estado.value} value={estado.value}>
+                              {estado.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
@@ -630,7 +706,12 @@ export default function ProcessoSeletivo() {
                   onClick={nextStep}
                   disabled={
                     (currentStep === 1 &&
-                      (!formData.nome || !formData.email || !formData.telefone || !formData.cidade)) ||
+                      (!formData.nome ||
+                        !formData.email ||
+                        !emailValid ||
+                        !formData.telefone ||
+                        !formData.cidade ||
+                        !formData.estado)) ||
                     (currentStep === 2 &&
                       (!requisitos.ensinoMedio ||
                         !requisitos.informaticaBasica ||
